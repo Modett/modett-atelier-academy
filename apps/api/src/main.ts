@@ -1,15 +1,21 @@
-import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
+import { AppConfigService } from './config/app-config.service';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
+
+  const config = app.get(AppConfigService);
+
   app.setGlobalPrefix('v1');
+  app.use(helmet());
+  app.enableCors({ origin: config.corsOrigins, credentials: true });
+  app.enableShutdownHooks();
 
-  const port = Number(process.env.PORT ?? 3000);
-  await app.listen(port);
-
-  Logger.log(`API listening on port ${port}`, 'Bootstrap');
+  await app.listen(config.port);
 }
 
 void bootstrap();
