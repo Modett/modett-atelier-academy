@@ -1,0 +1,7 @@
+{
+  "extends": "@modett/config/tsconfig.nest.json",
+  "compilerOptions": {
+    "outDir": "dist"
+  },
+  "include": ["src", "test"]
+}

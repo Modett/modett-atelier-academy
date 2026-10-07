@@ -1,0 +1,21 @@
+{
+  "name": "@modett/config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./eslint": "./eslint.config.js",
+    "./tsconfig.library.json": "./tsconfig.library.json",
+    "./tsconfig.nest.json": "./tsconfig.nest.json"
+  },
+  "files": [
+    "eslint.config.js",
+    "tsconfig.library.json",
+    "tsconfig.nest.json"
+  ],
+  "dependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.1"
+  }
+}
