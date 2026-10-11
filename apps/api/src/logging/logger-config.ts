@@ -1,8 +1,28 @@
 import type { Params } from 'nestjs-pino';
 import { ensureRequestId } from '../common/request-id/request-id';
-import type { AppConfigService } from '../config/app-config.service';
+import type { AppConfig } from '../config/env';
+import { DEFAULT_CF_ORIGIN_SECRET_HEADER } from '../config/env';
 
-export function createLoggerOptions(config: AppConfigService): Params {
+export type LoggerConfigInput = {
+  nodeEnv: AppConfig['NODE_ENV'];
+  logLevel: AppConfig['LOG_LEVEL'];
+  cfOriginSecretHeader: string;
+};
+
+export function buildRedactPaths(originSecretHeader: string): string[] {
+  const configuredHeader = originSecretHeader.toLowerCase();
+  const secretHeaders = new Set([DEFAULT_CF_ORIGIN_SECRET_HEADER, configuredHeader]);
+
+  return [
+    'req.headers.authorization',
+    'req.headers.cookie',
+    ...[...secretHeaders].map((header) => `req.headers.${header}`),
+    'password',
+    '*.password',
+  ];
+}
+
+export function createLoggerOptions(config: LoggerConfigInput): Params {
   const isDevelopment = config.nodeEnv === 'development';
 
   return {
@@ -10,8 +30,7 @@ export function createLoggerOptions(config: AppConfigService): Params {
       level: config.logLevel,
       genReqId: (req, res) => ensureRequestId(req, res),
       redact: {
-        paths: ['req.headers.authorization', 'req.headers.cookie', 'password', '*.password'],
-        remove: true,
+        paths: buildRedactPaths(config.cfOriginSecretHeader),
       },
       transport: isDevelopment ? { target: 'pino-pretty', options: { singleLine: true } } : undefined,
     },

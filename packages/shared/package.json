@@ -10,6 +10,9 @@
     "lint": "eslint .",
     "test": "jest"
   },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
   "devDependencies": {
     "@modett/config": "workspace:*",
     "@types/jest": "30.0.0",

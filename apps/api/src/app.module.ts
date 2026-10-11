@@ -11,6 +11,7 @@ import { DatabaseModule } from './infra/database/database.module';
 import { RedisModule } from './infra/redis/redis.module';
 import { createLoggerOptions } from './logging/logger-config';
 import { HealthModule } from './modules/health/health.module';
+import { RegionModule } from './modules/region/region.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { HealthModule } from './modules/health/health.module';
     DatabaseModule,
     RedisModule,
     HealthModule,
+    RegionModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },

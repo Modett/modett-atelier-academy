@@ -37,4 +37,16 @@ export class AppConfigService {
   get logLevel(): AppConfig['LOG_LEVEL'] {
     return this.config.LOG_LEVEL;
   }
+
+  get cfOriginSecret(): string | undefined {
+    return this.config.CF_ORIGIN_SECRET;
+  }
+
+  get cfOriginSecretHeader(): string {
+    return this.config.CF_ORIGIN_SECRET_HEADER;
+  }
+
+  get devCountryOverride(): string | undefined {
+    return this.config.DEV_COUNTRY_OVERRIDE;
+  }
 }

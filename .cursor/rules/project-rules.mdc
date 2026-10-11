@@ -57,3 +57,9 @@ alwaysApply: true
 - Do not edit code outside the prompt's scope. In Plan mode do not edit files or run commands.
 - Never commit secrets; .env.example holds placeholders only.
 - Finish with a short report: files changed, dependencies added, assumptions, test results, anything not done.
+
+# Product principles
+- Never frustrate legitimate users. Verify an email once at signup, never on each login. Keep rate-limit waits short and escalating, with a visible countdown and a clear way out (forgot password).
+- Never lock an account because of failed attempts; throttle by email plus IP instead.
+- Error messages are clear and human, and never reveal whether an email has an account.
+- Prices always come from the API in the visitor's region currency; never hard-code or convert prices in the client.

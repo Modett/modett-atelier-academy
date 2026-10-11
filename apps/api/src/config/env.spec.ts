@@ -1,6 +1,15 @@
 import { ZodError } from 'zod';
 import { parseEnv } from './env';
 
+const PRODUCTION_SECRET = '0123456789abcdef';
+
+function zodMessages(error: unknown): string[] {
+  if (!(error instanceof ZodError)) {
+    throw error;
+  }
+  return error.issues.map((issue) => issue.message);
+}
+
 const base = {
   NODE_ENV: 'test',
   PORT: '3000',
@@ -59,4 +68,84 @@ describe('parseEnv', () => {
       expect(names).toContain('NODE_ENV');
     }
   });
+
+  it('fails in production when CF_ORIGIN_SECRET is missing', () => {
+    expect.assertions(1);
+    try {
+      parseEnv({ ...base, NODE_ENV: 'production' });
+    } catch (error) {
+      expect(zodMessages(error)).toContain('CF_ORIGIN_SECRET is required in production');
+    }
+  });
+
+  it('fails in production when DEV_COUNTRY_OVERRIDE is set', () => {
+    expect.assertions(1);
+    try {
+      parseEnv({
+        ...base,
+        NODE_ENV: 'production',
+        CF_ORIGIN_SECRET: PRODUCTION_SECRET,
+        DEV_COUNTRY_OVERRIDE: 'LK',
+      });
+    } catch (error) {
+      expect(zodMessages(error)).toContain('DEV_COUNTRY_OVERRIDE must not be set in production');
+    }
+  });
+
+  it('accepts development without a Cloudflare secret or country override', () => {
+    const config = parseEnv({ ...base, NODE_ENV: 'development' });
+
+    expect(config.CF_ORIGIN_SECRET).toBeUndefined();
+    expect(config.DEV_COUNTRY_OVERRIDE).toBeUndefined();
+    expect(config.CF_ORIGIN_SECRET_HEADER).toBe('x-cf-origin-secret');
+  });
+
+  it('fails in production when CF_ORIGIN_SECRET is shorter than 16 characters', () => {
+    expect.assertions(1);
+    try {
+      parseEnv({ ...base, NODE_ENV: 'production', CF_ORIGIN_SECRET: 'too-short' });
+    } catch (error) {
+      expect(zodMessages(error)).toContain(
+        'CF_ORIGIN_SECRET must be at least 16 characters in production',
+      );
+    }
+  });
+
+  it('accepts production with a long secret and no country override', () => {
+    const config = parseEnv({
+      ...base,
+      NODE_ENV: 'production',
+      CF_ORIGIN_SECRET: PRODUCTION_SECRET,
+    });
+
+    expect(config.CF_ORIGIN_SECRET).toBe(PRODUCTION_SECRET);
+    expect(config.DEV_COUNTRY_OVERRIDE).toBeUndefined();
+  });
+
+  it('lowercases a valid CF_ORIGIN_SECRET_HEADER', () => {
+    const config = parseEnv({ ...base, CF_ORIGIN_SECRET_HEADER: 'X-Custom-Origin-Secret' });
+
+    expect(config.CF_ORIGIN_SECRET_HEADER).toBe('x-custom-origin-secret');
+  });
+
+  it('accepts the default CF_ORIGIN_SECRET_HEADER shape', () => {
+    const config = parseEnv({ ...base, CF_ORIGIN_SECRET_HEADER: 'x-cf-origin-secret' });
+
+    expect(config.CF_ORIGIN_SECRET_HEADER).toBe('x-cf-origin-secret');
+  });
+
+  it.each(['bad_header', 'has.dot', 'has space', 'UPPER_BAD', 'a'.repeat(65)])(
+    'rejects invalid CF_ORIGIN_SECRET_HEADER %p',
+    (header) => {
+      expect.assertions(2);
+      try {
+        parseEnv({ ...base, CF_ORIGIN_SECRET_HEADER: header });
+      } catch (error) {
+        expect(error).toBeInstanceOf(ZodError);
+        expect(zodMessages(error)).toContain(
+          'CF_ORIGIN_SECRET_HEADER must be 1-64 characters of lowercase letters, digits, or hyphens',
+        );
+      }
+    },
+  );
 });
